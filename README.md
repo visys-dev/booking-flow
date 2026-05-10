@@ -10,6 +10,26 @@ open index.html
 
 You can also open the project with VS Code Live Server or any static file server.
 
+### Run with Docker
+
+Build the image:
+
+```bash
+docker build -t booking-flow .
+```
+
+Run the container:
+
+```bash
+docker run --rm -p 8080:80 booking-flow
+```
+
+Open the app at:
+
+```text
+http://localhost:8080
+```
+
 ## Information architecture summary
 
 The flow is organized around one booking form with three progressive steps:
