@@ -1,4 +1,4 @@
-const { track } = window.MentorAnalytics;
+const trackEvent = window.MentorAnalytics?.track ?? (() => {});
 
 const STORAGE_KEY = 'mentor-me-booking-state-v1';
 const PHONE_REGEX = /^\+380\d{9}$/;
@@ -56,9 +56,9 @@ const ERROR_DICTIONARY = {
     'The booking service is temporarily unavailable.',
   ],
   invalid_date: [
-    'Choose a future booking date.',
-    'Booking date must be tomorrow or later.',
-    'Past and same-day bookings are not available.',
+    'Choose today or a later booking date.',
+    'Booking date must be today or later.',
+    'Past bookings are not available.',
   ],
 };
 
@@ -110,6 +110,7 @@ const state = loadState();
 const touchedFields = new Set();
 let currentErrors = {};
 let lastStep = state.currentStep;
+let slotRenderRequest = 0;
 
 const elements = {
   form: document.querySelector('#booking-form'),
@@ -182,6 +183,13 @@ function todayStart() {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
+function toDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function dateFromInput(value) {
   if (!value || typeof value !== 'string') return null;
   const [year, month, day] = value.split('-').map(Number);
@@ -189,29 +197,40 @@ function dateFromInput(value) {
   return new Date(year, month - 1, day);
 }
 
-function isFutureDate(value) {
+function isTodayOrFutureDate(value) {
   const selected = dateFromInput(value);
-  return selected instanceof Date && !Number.isNaN(selected.valueOf()) && selected > todayStart();
+  return selected instanceof Date && !Number.isNaN(selected.valueOf()) && selected >= todayStart();
+}
+
+function getSlotStart(value, slotTime) {
+  const date = dateFromInput(value);
+  if (!date || !slotTime) return null;
+  const [hours, minutes] = slotTime.split(':').map(Number);
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
+function isFutureSlot(value, slotTime) {
+  const start = getSlotStart(value, slotTime);
+  return start instanceof Date && !Number.isNaN(start.valueOf()) && start > new Date();
 }
 
 function toStartAtIso() {
-  const date = dateFromInput(state.fields.start_at);
-  if (!date || !state.fields.slot) return '';
-  const [hours, minutes] = state.fields.slot.split(':').map(Number);
-  date.setHours(hours, minutes, 0, 0);
-  return date.toISOString();
+  return getSlotStart(state.fields.start_at, state.fields.slot)?.toISOString() ?? '';
 }
 
 function validateStep1(fields) {
   const errors = {};
   if (!fields.start_at) {
     errors.start_at = makeError('start_at', 'missing_required_field', 'Choose a booking date.');
-  } else if (!isFutureDate(fields.start_at)) {
+  } else if (!isTodayOrFutureDate(fields.start_at)) {
     errors.start_at = makeError('start_at', 'invalid_date');
   }
 
   if (!fields.slot) {
     errors.slot = makeError('slot', 'missing_required_field', 'Choose an available time slot.');
+  } else if (!isFutureSlot(fields.start_at, fields.slot)) {
+    errors.slot = makeError('slot', 'invalid_date', 'Choose a future time slot.');
   }
 
   return errors;
@@ -263,6 +282,7 @@ function isStep1LocallyValid() {
 
 function updateInputValues() {
   elements.date.value = state.fields.start_at;
+  elements.date.classList.toggle('has-value', Boolean(state.fields.start_at));
   elements.fullName.value = state.fields.full_name;
   elements.email.value = state.fields.email;
   elements.phone.value = state.fields.phone;
@@ -283,7 +303,7 @@ function updateProgress() {
 
 function showStep(step, focus = true) {
   if (lastStep !== step) {
-    track('abandon_step', {
+    trackEvent('abandon_step', {
       step: lastStep,
       next_step: step,
       field_count_completed: Object.values(state.fields).filter(Boolean).length,
@@ -311,16 +331,27 @@ function showStep(step, focus = true) {
 }
 
 function renderSlots() {
+  const requestId = ++slotRenderRequest;
   elements.slotOptions.innerHTML = '';
-  elements.slotLoading.classList.remove('hidden');
   elements.slotEmpty.classList.add('hidden');
 
-  window.setTimeout(() => {
+  if (!isTodayOrFutureDate(state.fields.start_at)) {
     elements.slotLoading.classList.add('hidden');
-    const availableSlots = SLOT_DATA.filter((slot) => slot.available);
+    return;
+  }
+
+  elements.slotLoading.classList.remove('hidden');
+
+  window.setTimeout(() => {
+    if (requestId !== slotRenderRequest) return;
+
+    elements.slotOptions.innerHTML = '';
+    elements.slotLoading.classList.add('hidden');
+    const visibleSlots = SLOT_DATA.filter((slot) => isFutureSlot(state.fields.start_at, slot.time));
+    const availableSlots = visibleSlots.filter((slot) => slot.available);
     elements.slotEmpty.classList.toggle('hidden', availableSlots.length > 0);
 
-    SLOT_DATA.forEach((slot) => {
+    visibleSlots.forEach((slot) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'slot-button';
@@ -391,7 +422,7 @@ function showErrorSummary(errors) {
 }
 
 function logValidation(step, errors, duration) {
-  track('validation_time_ms', {
+  trackEvent('validation_time_ms', {
     step,
     duration_ms: duration,
     error_count: Object.keys(errors).length,
@@ -399,7 +430,7 @@ function logValidation(step, errors, duration) {
   });
 
   Object.values(errors).forEach((error) => {
-    track('form_error', {
+    trackEvent('form_error', {
       step,
       field: error.field,
       error_code: error.error_code,
@@ -433,7 +464,7 @@ function showServerError(target, errorResponse) {
   target.textContent = `${errorResponse.message}${trace}`;
   target.classList.remove('hidden');
   target.focus?.();
-  track('form_error', {
+  trackEvent('form_error', {
     step: state.currentStep,
     field: errorResponse.details?.field ?? 'form',
     error_code: errorResponse.error_code,
@@ -459,6 +490,7 @@ function updateFromInput(event) {
   saveState();
 
   if (name === 'start_at') {
+    elements.date.classList.toggle('has-value', Boolean(state.fields.start_at));
     state.fields.slot = '';
     renderSlots();
   }
@@ -475,7 +507,7 @@ function handleBlur(event) {
   const fieldError = validateField(name);
   renderFieldErrors({ ...currentErrors, [name]: fieldError });
   if (fieldError) {
-    track('form_error', {
+    trackEvent('form_error', {
       step: state.currentStep,
       field: fieldError.field,
       error_code: fieldError.error_code,
@@ -502,7 +534,7 @@ function simulateBookingApi() {
         return;
       }
 
-      if (!isFutureDate(state.fields.start_at)) {
+      if (!isFutureSlot(state.fields.start_at, state.fields.slot)) {
         reject(createApiError('invalid_booking_status', getMessage('invalid_booking_status'), { field: 'start_at' }));
         return;
       }
@@ -562,7 +594,7 @@ async function handleConfirm() {
     elements.successPanel.classList.remove('hidden');
     elements.successPanel.focus();
     updateProgress();
-    track('form_submit_success', {
+    trackEvent('form_submit_success', {
       step: 3,
       booking_id: booking.id,
       status: booking.status,
@@ -627,9 +659,7 @@ function resetFlow() {
 }
 
 function init() {
-  const tomorrow = new Date(todayStart());
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  elements.date.min = tomorrow.toISOString().slice(0, 10);
+  elements.date.min = toDateInputValue(todayStart());
 
   updateInputValues();
   renderSlots();

@@ -22,7 +22,7 @@ A persistent progress indicator, inline errors, an assertive error summary, serv
 
 ## Happy path
 
-1. Select a future booking date.
+1. Select today or a later booking date with a future time slot.
 2. Select an available time slot other than `15:00`.
 3. Enter full name, valid email, valid Ukrainian phone number such as `+380501234567`, and check consent.
 4. Review the unmasked details on the confirmation step.
@@ -98,9 +98,9 @@ Errors update dynamically, appear inline, and never clear valid user-entered val
 | Full Name | `full_name` | Required non-empty text |
 | Email | `email` | Required and standard email-like format |
 | Phone | `phone` | Required and must match `^\+380\d{9}$` |
-| Booking Date | `start_at` | Required and must be in the future |
+| Booking Date | `start_at` | Required and must be today or later |
 | Consent | `notifications_enabled` | Required checked checkbox |
-| Time Slot | `slot` | Required available slot button |
+| Time Slot | `slot` | Required available future slot button |
 
 ## API-oriented error model
 

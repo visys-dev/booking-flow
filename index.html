@@ -86,7 +86,7 @@
             <div class="step-heading">
               <p class="step-count">Step 1 of 3</p>
               <h3 id="step-1-title">Select Slot</h3>
-              <p class="muted">Choose a future date and one available tutoring time.</p>
+              <p class="muted">Choose today or a later date and one available future time.</p>
             </div>
 
             <div id="step-1-server-error" class="form-level-error hidden" role="alert" aria-live="assertive" tabindex="-1"></div>
@@ -100,7 +100,7 @@
                 aria-describedby="booking-date-help booking-date-error"
                 aria-invalid="false"
               />
-              <p id="booking-date-help" class="help-text">Select tomorrow or a later date.</p>
+              <p id="booking-date-help" class="help-text">Select today or a later date.</p>
               <p id="booking-date-error" class="field-error" aria-live="assertive"></p>
             </div>
 
@@ -108,7 +108,7 @@
               <legend>Available time slots</legend>
               <p id="slot-help" class="help-text">Unavailable slots are disabled. The 15:00 slot demonstrates a conflict if confirmed.</p>
               <div id="slot-loading" class="loading-state" role="status" aria-live="polite">Loading available slots…</div>
-              <div id="slot-empty" class="empty-state hidden">No slots are available for this date. Please choose another future date.</div>
+              <div id="slot-empty" class="empty-state hidden">No future slots are available for this date. Please choose another date.</div>
               <div id="slot-options" class="slot-grid" role="group" aria-label="Available tutoring time slots" tabindex="-1"></div>
               <p id="slot-error" class="field-error" aria-live="assertive"></p>
             </fieldset>
