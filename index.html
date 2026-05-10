@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Mentor Me accessible multi-step tutoring booking flow demo." />
+    <title>Mentor Me | Accessible Booking Flow</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#booking-card">Skip to booking form</a>
+
+    <header class="site-header">
+      <div class="container header-grid">
+        <div>
+          <p class="eyebrow">Mentor Me</p>
+          <h1>Book a tutoring session with confidence</h1>
+          <p class="hero-copy">
+            A resilient, accessible, frontend-only booking prototype with validation,
+            focus management, and API-style error handling.
+          </p>
+        </div>
+        <aside class="hero-note" aria-label="Booking guarantees">
+          <strong>Booking invariants</strong>
+          <ul>
+            <li>Status becomes <code>confirmed</code> only after success.</li>
+            <li>Reminder timestamp remains <code>null</code> at booking.</li>
+            <li>Session start time must be in the future.</li>
+          </ul>
+        </aside>
+      </div>
+    </header>
+
+    <main class="container main-layout">
+      <section id="booking-card" class="card" aria-labelledby="booking-title">
+        <div class="card-header">
+          <div>
+            <p class="eyebrow">Accessible demo</p>
+            <h2 id="booking-title">Schedule your mentor session</h2>
+          </div>
+          <button id="reset-flow" class="button button-secondary" type="button">Reset demo</button>
+        </div>
+
+        <nav class="progress" aria-label="Booking progress">
+          <ol>
+            <li class="progress-step" data-progress-step="1">
+              <span class="progress-marker" aria-hidden="true">1</span>
+              <span>Select Slot</span>
+            </li>
+            <li class="progress-step" data-progress-step="2">
+              <span class="progress-marker" aria-hidden="true">2</span>
+              <span>Contact Details</span>
+            </li>
+            <li class="progress-step" data-progress-step="3">
+              <span class="progress-marker" aria-hidden="true">3</span>
+              <span>Confirmation</span>
+            </li>
+          </ol>
+        </nav>
+
+        <div id="global-status" class="status-region" role="status" aria-live="polite"></div>
+
+        <section id="success-panel" class="success-panel hidden" tabindex="-1" aria-labelledby="success-title">
+          <div class="success-icon" aria-hidden="true">✓</div>
+          <div>
+            <h3 id="success-title">Booking confirmed</h3>
+            <p id="success-message"></p>
+            <p class="muted">Your booking record was created with status <strong>confirmed</strong> and reminder_sent_at <strong>null</strong>.</p>
+          </div>
+        </section>
+
+        <form id="booking-form" novalidate>
+          <div
+            id="error-summary"
+            class="error-summary hidden"
+            role="alert"
+            aria-live="assertive"
+            tabindex="-1"
+            aria-labelledby="error-summary-title"
+          >
+            <h3 id="error-summary-title">Please fix the following</h3>
+            <ul id="error-summary-list"></ul>
+          </div>
+
+          <section class="form-step" data-step="1" aria-labelledby="step-1-title">
+            <div class="step-heading">
+              <p class="step-count">Step 1 of 3</p>
+              <h3 id="step-1-title">Select Slot</h3>
+              <p class="muted">Choose a future date and one available tutoring time.</p>
+            </div>
+
+            <div id="step-1-server-error" class="form-level-error hidden" role="alert" aria-live="assertive" tabindex="-1"></div>
+
+            <div class="field-group">
+              <label for="booking-date">Booking date</label>
+              <input
+                id="booking-date"
+                name="start_at"
+                type="date"
+                aria-describedby="booking-date-help booking-date-error"
+                aria-invalid="false"
+              />
+              <p id="booking-date-help" class="help-text">Select tomorrow or a later date.</p>
+              <p id="booking-date-error" class="field-error" aria-live="assertive"></p>
+            </div>
+
+            <fieldset class="field-group slot-fieldset" aria-describedby="slot-help slot-error">
+              <legend>Available time slots</legend>
+              <p id="slot-help" class="help-text">Unavailable slots are disabled. The 15:00 slot demonstrates a conflict if confirmed.</p>
+              <div id="slot-loading" class="loading-state" role="status" aria-live="polite">Loading available slots…</div>
+              <div id="slot-empty" class="empty-state hidden">No slots are available for this date. Please choose another future date.</div>
+              <div id="slot-options" class="slot-grid" role="group" aria-label="Available tutoring time slots" tabindex="-1"></div>
+              <p id="slot-error" class="field-error" aria-live="assertive"></p>
+            </fieldset>
+
+            <div class="button-row">
+              <button id="step-1-continue" class="button button-primary" type="submit" disabled>Continue</button>
+            </div>
+          </section>
+
+          <section class="form-step hidden" data-step="2" aria-labelledby="step-2-title">
+            <div class="step-heading">
+              <p class="step-count">Step 2 of 3</p>
+              <h3 id="step-2-title">Contact Details</h3>
+              <p class="muted">We use these details to prepare your tutoring session.</p>
+            </div>
+
+            <div class="field-group">
+              <label for="full-name">Full Name</label>
+              <input
+                id="full-name"
+                name="full_name"
+                type="text"
+                autocomplete="name"
+                aria-describedby="full-name-help full-name-error"
+                aria-invalid="false"
+              />
+              <p id="full-name-help" class="help-text">Enter your first and last name.</p>
+              <p id="full-name-error" class="field-error" aria-live="assertive"></p>
+            </div>
+
+            <div class="field-group">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                aria-describedby="email-help email-error"
+                aria-invalid="false"
+              />
+              <p id="email-help" class="help-text">Example: learner@example.com</p>
+              <p id="email-error" class="field-error" aria-live="assertive"></p>
+            </div>
+
+            <div class="field-group">
+              <label for="phone">Phone</label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                inputmode="tel"
+                autocomplete="tel"
+                placeholder="+380XXXXXXXXX"
+                aria-describedby="phone-help phone-error"
+                aria-invalid="false"
+              />
+              <p id="phone-help" class="help-text">Use Ukrainian format: +380 followed by 9 digits.</p>
+              <p id="phone-error" class="field-error" aria-live="assertive"></p>
+            </div>
+
+            <div class="field-group checkbox-group">
+              <input
+                id="consent"
+                name="notifications_enabled"
+                type="checkbox"
+                aria-describedby="consent-help consent-error"
+                aria-invalid="false"
+              />
+              <div>
+                <label for="consent">I agree to receive booking notifications.</label>
+                <p id="consent-help" class="help-text">Consent is required so Mentor Me can send session updates.</p>
+                <p id="consent-error" class="field-error" aria-live="assertive"></p>
+              </div>
+            </div>
+
+            <div class="button-row split">
+              <button class="button button-secondary" type="button" data-back-to="1">Back</button>
+              <button class="button button-primary" type="submit">Continue</button>
+            </div>
+          </section>
+
+          <section class="form-step hidden" data-step="3" aria-labelledby="step-3-title">
+            <div class="step-heading">
+              <p class="step-count">Step 3 of 3</p>
+              <h3 id="step-3-title">Confirmation</h3>
+              <p class="muted">Review your unmasked details before confirming.</p>
+            </div>
+
+            <div id="step-3-server-error" class="form-level-error hidden" role="alert" aria-live="assertive" tabindex="-1"></div>
+
+            <dl class="confirmation-list">
+              <div>
+                <dt>Booking date</dt>
+                <dd id="confirm-date">—</dd>
+              </div>
+              <div>
+                <dt>Time slot</dt>
+                <dd id="confirm-slot">—</dd>
+              </div>
+              <div>
+                <dt>Full name</dt>
+                <dd id="confirm-name">—</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd id="confirm-email">—</dd>
+              </div>
+              <div>
+                <dt>Phone</dt>
+                <dd id="confirm-phone">—</dd>
+              </div>
+            </dl>
+
+            <fieldset class="simulation-panel">
+              <legend>Demo API response</legend>
+              <p class="help-text">Use these controls to test server-side failure handling without losing form state.</p>
+              <label><input type="radio" name="api_simulation" value="success" checked /> Success</label>
+              <label><input type="radio" name="api_simulation" value="internal_error" /> Internal server error</label>
+            </fieldset>
+
+            <div class="button-row split">
+              <button class="button button-secondary" type="button" data-back-to="2">Back</button>
+              <button id="confirm-booking" class="button button-primary" type="submit">Confirm Booking</button>
+            </div>
+          </section>
+        </form>
+      </section>
+
+      <aside class="info-panel" aria-labelledby="wcag-title">
+        <h2 id="wcag-title">WCAG checklist</h2>
+        <ul class="checklist">
+          <li><strong>Keyboard navigation — PASS:</strong> native controls, logical DOM order, and focusable summaries.</li>
+          <li><strong>Visible focus — PASS:</strong> high-contrast outlines on links, inputs, and buttons.</li>
+          <li><strong>Error summary — PASS:</strong> failed submits focus an alert summary with field links.</li>
+          <li><strong>aria-describedby — PASS:</strong> help and error text are connected to inputs.</li>
+          <li><strong>Contrast AA — PASS:</strong> dark text, strong error red, and primary indigo meet AA on light surfaces.</li>
+          <li><strong>Screen reader support — PASS:</strong> semantic landmarks, labels, alerts, and live status regions are included.</li>
+        </ul>
+      </aside>
+    </main>
+
+    <script src="analytics.js" defer></script>
+    <script src="script.js" defer></script>
+  </body>
+</html>
