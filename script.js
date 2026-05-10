@@ -104,6 +104,7 @@ const SLOT_DATA = [
   { time: '12:00', available: false, reason: 'Unavailable' },
   { time: '15:00', available: true, risk: 'May conflict' },
   { time: '16:30', available: true },
+  { time: '19:00', available: true },
 ];
 
 const state = loadState();
