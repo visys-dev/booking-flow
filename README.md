@@ -2,6 +2,12 @@
 
 Mentor Me is a frontend-only, production-like demo of an accessible multi-step booking flow for a tutoring platform. It uses semantic HTML5, CSS3, and vanilla JavaScript only—no framework, build step, or backend is required.
 
+## Quick start
+
+Короткий запуск, Docker-команди та demo-сценарії описані тут: [QUICKSTART.md](https://github.com/visys-dev/booking-flow/blob/main/QUICKSTART.md).
+
+UX-пакет з IA-схемою, Field Inventory, Error Dictionary, WCAG-чеклистом, тестовим звітом і описом аналітики: [ux-package.md](https://github.com/visys-dev/booking-flow/blob/main/ux-package.md).
+
 ## How to run
 
 ```bash

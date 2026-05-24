@@ -129,6 +129,8 @@
 
 ## 6. Скріншоти помилок
 
+Папка зі скріншотами: [docs/screenshots](https://github.com/visys-dev/booking-flow/tree/main/docs/screenshots).
+
 | Screenshot | Сценарій | Очікуваний доказ |
 | --- | --- | --- |
 | `01-step-1-missing-date-slot_1/2.png` | Submit Кроку 1 без date/slot | Неможливість натиснути Continue |
